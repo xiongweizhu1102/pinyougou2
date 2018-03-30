@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+        xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+    <!--以下页面不进行拦截,不放进安全框架里面是对拦截/**的部分忽略-->
+    <http pattern="/login.html" security="none"></http>
+    <http pattern="/css/**" security="none"></http>
+    <http pattern="/img/**" security="none"></http>
+    <http pattern="/js/**" security="none"></http>
+    <http pattern="/plugins/**" security="none"></http>
+    <!--页面拦截规则-->
+    <http use-expressions="false"><!--不使用拦截器-->
+        <!--拦截器匹配规则0,有这个角色才放行3-->
+        <intercept-url pattern="/**" access="ROLE_ADMIN"/>
+        <!--出现ico的配置,是否是认证是具体指向的,具体指向到哪里,不出现ico-->
+        <intercept-url pattern="/ac.ico" access="IS_AUTHENTICATED_ANONYMOUSLY"></intercept-url>
+        <!--开启表单登录1,就跳转到springsecurity的默认登录页面-->
+        <!---login-page开启表单登录跳转页面,成功 跳转页面default-target-url, default-target-url失败跳转页面-->
+        <!--如果用戶通過了驗證,总是跳转页面always-use-default-target-->
+        <form-login login-page="/login.html" default-target-url="/admin/index.html"
+                    authentication-failure-url="/login.html" always-use-default-target="true"></form-login>
+        <!--登出会自动生成logout的url地址,页面需要提供一个loginout地址就行,过滤地址进行匹配,进行session的删除且最后跳转定义页面logout-success-url-->
+        <logout logout-success-url="/login.html"></logout>
+        <!--关闭跨站请求伪造disabled不开启为true-->
+        <csrf disabled="true"></csrf>
+        <!--使用了框架页，需要设置框架页的策略为SAMEORIGIN,登录过后就不行拦截里面的内容了,同源,一样的权限,还拦截干嘛-->
+        <headers>
+            <frame-options policy="SAMEORIGIN"></frame-options>
+        </headers>
+    </http>
+    <!--认证管理器-->
+    <authentication-manager>
+        <!--认证提供者-->
+        <authentication-provider>
+            <!--用户相关,用户服务,用户定义-->
+            <user-service>
+                <!--authorities.被授予什么角色才放行2-->
+                <user name="admin" password="123456" authorities="ROLE_ADMIN"></user>
+                <user name="sunwukong" password="dasheng" authorities="ROLE_ADMIN"></user>
+            </user-service>
+        </authentication-provider>
+    </authentication-manager>
+</beans:beans>
