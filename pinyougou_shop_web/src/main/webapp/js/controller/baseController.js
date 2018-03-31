@@ -41,4 +41,26 @@ app.controller('baseController' ,function($scope){
 		}
 		return value;
     }
+
+    //entity.goodsDesc.specticationItems就是选择了规格选项进行保存的地方,格式如下
+	//[{"attributeName":"网络制式","attributeValue":["移动4G"]},{"attributeName":"屏幕尺寸","attributeValue":["5.5寸","4.5寸"]}]
+	//在通用的controller定义一个查询集合对象中的属性名对应的属性值是否存在,存在往对象的属性值的值(数组)里面
+	//进行存值,不存在,就建立对象就往对象的属性名存值和,对象的属性值存值.其实就是根据对象(map)的key去进行查值
+    /**
+	 *
+     * @param list entity.goodsDesc.specticationItems就是选择了规格选项进行保存的地方
+     * @param key attributeName
+     * @param keyValue 网络制式
+     */
+	$scope.searchObjecByKey= function (list,key,keyValue) {
+		for(var i=0;i<list.length;i++){
+			//list[i]取对象,list[i][key]就是对象中key对应的值
+			if(list[i][key]==keyValue){
+				return list[i];
+			}
+		}
+		//如果没有就返回空
+		return null;
+    }
+
 });	

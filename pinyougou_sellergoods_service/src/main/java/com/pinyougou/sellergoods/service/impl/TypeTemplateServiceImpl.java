@@ -1,15 +1,17 @@
 package com.pinyougou.sellergoods.service.impl;
 import java.util.List;
+import java.util.Map;
 
+import com.alibaba.fastjson.JSON;
 import com.pinyougou.entity.PageResult;
+import com.pinyougou.mapper.TbSpecificationOptionMapper;
 import com.pinyougou.mapper.TbTypeTemplateMapper;
-import com.pinyougou.pojo.TbTypeTemplate;
+import com.pinyougou.pojo.*;
 import com.pinyougou.pojo.TbTypeTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.dubbo.config.annotation.Service;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.pinyougou.pojo.TbTypeTemplateExample;
 import com.pinyougou.pojo.TbTypeTemplateExample.Criteria;
 import com.pinyougou.sellergoods.service.TypeTemplateService;
 
@@ -107,5 +109,27 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 		Page<TbTypeTemplate> page= (Page<TbTypeTemplate>)typeTemplateMapper.selectByExample(example);		
 		return new PageResult(page.getTotal(), page.getResult());
 	}
-	
+    @Autowired
+	private TbSpecificationOptionMapper specificationOptionMapper;
+    @Override
+    public List<Map> findSpecList(Long id) {
+        //根据id查询出模板
+		TbTypeTemplate typeTemplate = typeTemplateMapper.selectByPrimaryKey(id);
+		//将规格列表字符串转换为MapList
+		List<Map> list = JSON.parseArray(typeTemplate.getSpecIds(), Map.class);
+		//遍历map去添加规格选项
+		for (Map map : list) {
+			//从map中拿到规格id,根据规格id去规格选项表中找对应的规格选项
+			//创造查询条件
+			TbSpecificationOptionExample example = new TbSpecificationOptionExample();
+			TbSpecificationOptionExample.Criteria criteria = example.createCriteria();
+			//需要将字符串的id转换为整形,Long型
+			criteria.andSpecIdEqualTo(new Long((Integer)map.get("id")));
+			List<TbSpecificationOption> options = specificationOptionMapper.selectByExample(example);
+			map.put("options",options);
+		}
+		return  list;
+
+	}
+
 }
