@@ -1,8 +1,9 @@
  //控制层 
-app.controller('contentController' ,function($scope,$controller   ,contentService){	
+app.controller('contentController' ,function($scope,$controller,uploadService ,contentCategoryService  ,contentService){
 	
 	$controller('baseController',{$scope:$scope});//继承
-	
+
+    $scope.status=['无效','有效'];
     //读取列表数据绑定到表单中  
 	$scope.findAll=function(){
 		contentService.findAll().success(
@@ -75,5 +76,35 @@ app.controller('contentController' ,function($scope,$controller   ,contentServic
 			}			
 		);
 	}
-    
+
+    $scope.uploadFile=function () {
+        uploadService.uploadFile().success(
+            function (response) {
+                if(response.success){
+                	//注意此地实体的pic就是返回的url
+                    $scope.entity.pic=response.message;
+                    console.log(response);
+                }else{
+                    alert(response.message)
+                }
+            }
+        ).error(function () {
+            alert("上传发送错误")
+        })
+    }
+    //查询广告分类
+	$scope.findContentCategoryList=function () {
+		contentCategoryService.findAll().success(
+			function (response) {
+				$scope.contentCategoryList=response;
+            }
+		)
+    }
+    //将图片名字置空
+	$scope.resetFile=function () {
+		//当没有id时,清空文件名字
+		if($scope.entity.id==null){
+            $("#file").val('')
+        }
+    }
 });	

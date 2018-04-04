@@ -1,5 +1,5 @@
  //控制层 
-app.controller('goodsController' ,function($scope,$controller   ,goodsService){	
+app.controller('goodsController' ,function($scope,$controller,itemCatService   ,goodsService){
 	
 	$controller('baseController',{$scope:$scope});//继承
 	
@@ -10,7 +10,24 @@ app.controller('goodsController' ,function($scope,$controller   ,goodsService){
 				$scope.list=response;
 			}			
 		);
-	}    
+	}
+	//商品状态
+	$scope.status=['未审核','已审核','审核未通过','关闭'];
+	//商品分类表
+	$scope.itemCatList=[];
+	//查询商品分类
+	$scope.findItemCatList=function () {
+		itemCatService.findAll().success(
+			function (response) {//得到的是商品分类集合
+				//遍历集合
+				for(var i=0;i<response.length;i++){
+					//绑定变量数组在对象id索引处的值等于对象的名字
+                    $scope.itemCatList[response[i].id]=response[i].name;
+				}
+            }
+		)
+    }
+
 	
 	//分页
 	$scope.findPage=function(page,rows){			
@@ -75,5 +92,20 @@ app.controller('goodsController' ,function($scope,$controller   ,goodsService){
 			}			
 		);
 	}
+
+    //更新状态
+	$scope.updateStatus=function (status) {
+		goodsService.updateStatus($scope.selectIds,status).success(
+			function (response) {
+				if (response.success){
+                    //刷新列表
+                    $scope.reloadList();
+                    //清空id集合
+                    $scope.selectIds=[];
+				}else
+				alert(response.message);
+		}
+		)
+    }
     
 });	

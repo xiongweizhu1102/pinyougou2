@@ -37,7 +37,7 @@
 
     </head>
 
-<body class="hold-transition skin-red sidebar-mini" ng-app="pinyougou" ng-controller="goodsController" ng-init="selectItemCart1List()">
+<body class="hold-transition skin-red sidebar-mini" ng-app="pinyougou" ng-controller="goodsController" ng-init="selectItemCart1List();findOne()">
 
             <!-- 正文区域 -->
             <section class="content">
@@ -199,7 +199,6 @@
 			                           <!-- <button type="button" class="btn btn-default" title="自定义规格" data-target="#mySpecModal"  data-toggle="modal"  ><i class="fa fa-file-o"></i> 自定义规格</button>  -->
 			                        </div>
                             	</div>
-							</div>
                             	<p>
 
 								<!--用if指令控制规格面板与SKU列表的显示与隐藏-->
@@ -213,7 +212,7 @@
 					                        <div class="col-md-10 data">
 					                               
 					                            <span ng-repeat="option in pojo.options"><!--;createItemList()-->
-					                            	<input  type="checkbox" ng-click="updateSpecAttribute($event,pojo.text,option.optionName);createItemList()">{{option.optionName}}
+					                            	<input  type="checkbox" ng-checked="checkAttributeValue(pojo.text,option.optionName)" ng-click="updateSpecAttribute($event,pojo.text,option.optionName);createItemList()">{{option.optionName}}
 					                            </span>
 
 					                        </div>
@@ -274,7 +273,7 @@
                  	
                    </div>
                   <div class="btn-toolbar list-toolbar">
-				      <button class="btn btn-primary" ng-click="add()"><i class="fa fa-save"></i>保存</button>
+				      <button class="btn btn-primary" ng-click="save()"><i class="fa fa-save"></i>保存</button>
 				      <button class="btn btn-default" ng-click="goListPage()">返回列表</button>
 				  </div>
 			

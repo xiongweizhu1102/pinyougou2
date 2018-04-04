@@ -2,7 +2,9 @@
 app.controller('contentCategoryController' ,function($scope,$controller   ,contentCategoryService){	
 	
 	$controller('baseController',{$scope:$scope});//继承
-	
+
+    //定义状态数组
+    $scope.status=['无效','有效'];
     //读取列表数据绑定到表单中  
 	$scope.findAll=function(){
 		contentCategoryService.findAll().success(
@@ -11,7 +13,7 @@ app.controller('contentCategoryController' ,function($scope,$controller   ,conte
 			}			
 		);
 	}    
-	
+
 	//分页
 	$scope.findPage=function(page,rows){			
 		contentCategoryService.findPage(page,rows).success(

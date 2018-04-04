@@ -1,5 +1,5 @@
  //控制层 
-app.controller('goodsController' ,function($scope,$controller   ,goodsService,itemCatService,uploadService,typeTemplateService){
+app.controller('goodsController' ,function($scope,$controller,$location ,goodsService,itemCatService,uploadService,typeTemplateService){
 	
 	$controller('baseController',{$scope:$scope});//继承
 	
@@ -23,18 +23,63 @@ app.controller('goodsController' ,function($scope,$controller   ,goodsService,it
 	}
 	
 	//查询实体 
-	$scope.findOne=function(id){				
+	$scope.findOne=function(){
+		var id=$location.search()['id'];//获取url带过来的参数值
+		//先拿初始化(注意初始化goods_edit.html)的findOne方法加参数做测试
+		//alert(id);
+		if (id==null||id==undefined){
+			return;
+		}
 		goodsService.findOne(id).success(
 			function(response){
-				$scope.entity= response;					
+                $scope.entity= response;//goods 被响应回来了,是tbgoods,tbgoodsDesc ,itemList
+                //此地的$scope.entity被绑定了回来的东西response,就能将其中的东西拿出来
+                //向富文本编辑器添加商品介绍,goods已经拿回来了里面东西就有了,,赋值上去就可以
+                editor.html($scope.entity.goodsDesc.introduction);
+                //图片和扩展属性拿回来是json字符,需要转换为json对象才能进行遍历
+                //图片显示
+                $scope.entity.goodsDesc.itemImages=JSON.parse($scope.entity.goodsDesc.itemImages);
+                //扩展属性
+                $scope.entity.goodsDesc.customAttributeItems=JSON.parse($scope.entity.goodsDesc.customAttributeItems);
+				//规格
+			//	alert("++++"+$scope.entity.goodsDesc.customAttributeItems);
+                $scope.entity.goodsDesc.specificationItems=JSON.parse($scope.entity.goodsDesc.specificationItems);
+                //因为$scope.entity.itemList.spec 对象是一个字符串,需要进行转换成json对象,转换成对象了才能进行遍历
+				for(var i=0;i<$scope.entity.itemList.length;i++){
+                    $scope.entity.itemList[i].spec=angular.fromJson(  $scope.entity.itemList[i].spec)
+				}
 			}
 		);				
 	}
-	
+//根据去数据库进行查询规格选项与之前勾选的进行比对,如果一样,就将checkbox勾上
+$scope.checkAttributeValue=function (specName,specOptionName) {
+	//通过修改按钮传递的id去数据库查选项选项规格集合赋值给一个变量
+	var items=$scope.entity.goodsDesc.specificationItems;
+	//将集合放进修改所用的查询的方法里面看有没有某个选项名
+	var object=$scope.searchObjecByKey(items,"attributeName",specName);
+	//如果查询不到这个选项名或者对象,证明没有选项,更别说规格选项了要勾上了,即checked为true
+	if (object==null){
+		return false;
+	}else{
+		//如果查询到了某个选项名,接着对比数据库和以前勾选的选项规格
+		//数据库的规格选项数组赋值给一个变量
+		var attributeValue=object.attributeValue;
+		//遍历数据库的规格选项数组,如果规格选项和被勾选的选项一样就返回true
+		for(var i=0;i<attributeValue.length;i++){
+			if(specOptionName==attributeValue[i]){
+				return true;
+			}
+		}
+	}
+    return false;
+}
+
 	//保存 
 	$scope.save=function(){				
-		var serviceObject;//服务层对象  				
-		if($scope.entity.id!=null){//如果有ID
+		var serviceObject;//服务层对象
+		// 富文本编辑器内容与编辑器进行绑定
+		$scope.entity.goodsDesc.introduction=editor.html()
+		if($scope.entity.goods.id!=null){//如果商品有 ID就进行修改
 			serviceObject=goodsService.update( $scope.entity ); //修改  
 		}else{
 			serviceObject=goodsService.add( $scope.entity  );//增加 
@@ -43,7 +88,14 @@ app.controller('goodsController' ,function($scope,$controller   ,goodsService,it
 			function(response){
 				if(response.success){
 					//重新查询 
-		        	$scope.reloadList();//重新加载
+		        	//$scope.reloadList();//重新加载
+					//修改成功了,提示
+					alert(response.message);
+					//清空kindeditor富文本内容,介绍内容
+					editor.html('');
+					$scope.entity={};
+					//重新调转到goods.html列表
+					window.location.href="goods.html";
 				}else{
 					alert(response.message);
 				}
@@ -80,8 +132,9 @@ app.controller('goodsController' ,function($scope,$controller   ,goodsService,it
 		);				
 	}
 	
-	$scope.searchEntity={};//定义搜索对象 
-	
+	$scope.searchEntity={};//定义搜索对象
+	//定义一个数组,审核状态,靠索引去找到元素,而这个索引正好是状态所代表的值
+	$scope.status=['未审核','已审核','审核未通过','关闭'];
 	//搜索
 	$scope.search=function(page,rows){			
 		goodsService.search(page,rows,$scope.searchEntity).success(
@@ -184,7 +237,10 @@ app.controller('goodsController' ,function($scope,$controller   ,goodsService,it
                     //品牌列表
                     $scope.typeTemplate.brandIds=JSON.parse(	$scope.typeTemplate.brandIds);
                     //扩展属性,是赋值给pojo的商品描述实体的扩展属性map集合
-                    $scope.entity.goodsDesc.customAttributeItems=JSON.parse($scope.typeTemplate.customAttributeItems);
+					//此地等于空时才显示
+                    if($location.search()['id']==null){
+                        $scope.entity.goodsDesc.customAttributeItems=JSON.parse($scope.typeTemplate.customAttributeItems);
+                    }
                 }
             )
 
@@ -276,6 +332,16 @@ app.controller('goodsController' ,function($scope,$controller   ,goodsService,it
         return newList;
     }
 
-
+	//定义分类名称的数组,索引为分类对象的id,值为分类对象的名字
+	$scope.itemCatList=[];
+		$scope.findItemCatList=function () {
+			itemCatService.findAll().success(
+				function (response) {//response为分类集合需要进行遍历
+					for(var i=0;i<response.length;i++){
+						$scope.itemCatList[response[i].id]=response[i].name;
+					}
+                }
+			)
+        }
 
 });
