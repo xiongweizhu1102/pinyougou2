@@ -3,6 +3,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.pinyougou.entity.PageResult;
 import com.pinyougou.mapper.TbSpecificationOptionMapper;
 import com.pinyougou.mapper.TbTypeTemplateMapper;
@@ -14,6 +15,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.pinyougou.pojo.TbTypeTemplateExample.Criteria;
 import com.pinyougou.sellergoods.service.TypeTemplateService;
+import org.springframework.data.redis.core.RedisTemplate;
 
 
 /**
@@ -42,8 +44,30 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 	public PageResult findPage(int pageNum, int pageSize) {
 		PageHelper.startPage(pageNum, pageSize);		
 		Page<TbTypeTemplate> page=   (Page<TbTypeTemplate>) typeTemplateMapper.selectByExample(null);
-		return new PageResult(page.getTotal(), page.getResult());
+
+			return new PageResult(page.getTotal(), page.getResult());
 	}
+
+	/**
+	 * 缓存品牌和规格
+	 */
+	@Autowired
+	private  RedisTemplate redisTemplate;
+	private void saveToRedis(){
+		//获取模板列表
+		List<TbTypeTemplate> typeTemplateList = findAll();
+		//循环模板得到品牌和规格需要进行json转换
+		for (TbTypeTemplate tbTypeTemplate : typeTemplateList) {
+			//品牌列表存储到缓存
+			List<Map> brandList = JSON.parseArray(tbTypeTemplate.getBrandIds(),Map.class);
+			redisTemplate.boundHashOps("brandList").put(tbTypeTemplate.getId(),brandList);
+			//规格和规格选项列表缓存到redis中
+			List<Map> specList = findSpecList(tbTypeTemplate.getId());
+			redisTemplate.boundHashOps("specList").put(tbTypeTemplate.getId(),specList);
+		}
+		System.out.println("缓存了");
+	}
+
 
 	/**
 	 * 增加
@@ -106,7 +130,10 @@ public class TypeTemplateServiceImpl implements TypeTemplateService {
 	
 		}
 		
-		Page<TbTypeTemplate> page= (Page<TbTypeTemplate>)typeTemplateMapper.selectByExample(example);		
+		Page<TbTypeTemplate> page= (Page<TbTypeTemplate>)typeTemplateMapper.selectByExample(example);
+			//做完分页再缓存
+			saveToRedis();
+			//System.out.println("品牌和规格缓存了");
 		return new PageResult(page.getTotal(), page.getResult());
 	}
     @Autowired

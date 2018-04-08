@@ -4,7 +4,7 @@
        xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
         <!--加载数据库配置文件-->
-    <context:property-placeholder location="classpath:properties/db.properties"></context:property-placeholder>
+    <context:property-placeholder location="classpath:properties/*.properties"></context:property-placeholder>
     <!--阿里巴巴数据库连接池-->
     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
         <property name="url" value="${jdbc.url}"></property>

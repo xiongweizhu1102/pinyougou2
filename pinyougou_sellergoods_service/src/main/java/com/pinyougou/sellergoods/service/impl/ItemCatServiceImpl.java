@@ -11,7 +11,7 @@ import com.pinyougou.pojo.TbItemCat;
 import com.pinyougou.pojo.TbItemCatExample;
 import com.pinyougou.pojo.TbItemCatExample.Criteria;
 import com.pinyougou.sellergoods.service.ItemCatService;
-
+import org.springframework.data.redis.core.RedisTemplate;
 
 
 /**
@@ -98,6 +98,8 @@ public class ItemCatServiceImpl implements ItemCatService {
 		Page<TbItemCat> page= (Page<TbItemCat>)itemCatMapper.selectByExample(example);		
 		return new PageResult(page.getTotal(), page.getResult());
 	}
+	@Autowired
+	private RedisTemplate redisTemplate;
 
     @Override
     public List<TbItemCat> findByParentId(Long parentId) {
@@ -106,6 +108,15 @@ public class ItemCatServiceImpl implements ItemCatService {
 		Criteria criteria = example.createCriteria();
 		//对条件进行设置,刚开始没什么限制条件
 		criteria.andParentIdEqualTo(parentId);
+		//因为增删改都会走这个方法,故在这里做缓存
+		//每次执行查询的时候,一次性读取所有分类缓存到redis进行存储
+		List<TbItemCat> list = findAll();
+		//缓存的key为分类,内部hash的key为分类名称,为什么为分类名称,因为搜索得到的就是分类名称
+		// 根据名称找到模板id,继而找到品牌列表和规格列表
+		for (TbItemCat tbItemCat : list) {
+			redisTemplate.boundHashOps("itemCat").put(tbItemCat.getName(),tbItemCat.getTypeId());
+		}
+		System.out.println("分类缓存了");
 		return itemCatMapper.selectByExample(example);
     }
 
